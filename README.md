@@ -12,11 +12,13 @@
     </a>
   </p>
 </h2>
-<h3 align="center">
+<h2 align="center">
   <p>
     <img src="https://img.shields.io/badge/language-lua-2C2D72?style=for-the-badge&logo=lua"/>
   </p>
-</h3>
-<h4 align="center">
-  Here all of my scripts for CS:GO cheats
-<h4>
+</h2>
+<h2 align="center">
+  <p>
+    Here all of my scripts for CS:GO cheats
+  </p>
+<h2>
