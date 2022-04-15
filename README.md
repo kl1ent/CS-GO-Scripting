@@ -15,6 +15,7 @@
 <h2 align="center">
   <p>
     <img src="https://img.shields.io/badge/language-lua-2C2D72?style=for-the-badge&logo=lua"/>
+    <img src="https://img.shields.io/badge/language-JavaScript-F7DF1E?style=for-the-badge&logo=JavaScript&logoColor=white"/>
   </p>
 </h2>
 
