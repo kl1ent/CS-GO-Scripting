@@ -8,7 +8,7 @@
       <img src="https://img.shields.io/badge/Forum-Yougame-red?style=for-the-badge&logo=framer"/>
     </a>
     <a href="https://discord.gg/KrtcBg92qb/">
-      <img src="https://img.shields.io/badge/Discord-Server-5865F2?style=for-the-badge&logo=discord"/>
+      <img src="https://img.shields.io/badge/Discord-Server-5865F2?style=for-the-badge&logo=discord&logoColor=white"/>
     </a>
   </p>
 </h2>
