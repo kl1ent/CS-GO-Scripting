@@ -1,4 +1,4 @@
-<h1 align="center">Scripts</h1>
+<h1 align="center">Cheat scripting</h1>
 <h3 align="center">
   <p>
     <a href="https://brokencore.club/members/544/">
