@@ -22,6 +22,7 @@
 },
 
 {
+  class = 2,
   author = "unknown", 
   second_name = "Helper Data", 
   name = "helper_data", 
