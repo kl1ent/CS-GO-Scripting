@@ -35,7 +35,6 @@
   class = 2,
   
   update = "03.06.2022",
-  author = "unknown", 
   
   second_name = "Helper Data", 
   name = "helper_data", 
