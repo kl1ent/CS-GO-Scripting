@@ -34,3 +34,5 @@ local print = function(...)
     console.print_color("[rawetrip] ", color.new(247, 132, 58, 255))
     console.print(table.concat(current_table_with_strings, " ") .. "\n")
 end
+
+return print
