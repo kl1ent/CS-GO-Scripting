@@ -1,1 +1,1 @@
-{"General", "Helper locations", "Necron configs"}
+{"General", "Helper locations"}
