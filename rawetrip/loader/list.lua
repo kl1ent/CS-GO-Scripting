@@ -33,7 +33,7 @@
   info = {
     images = {
       {name = "helper_aim", url = "https://raw.githubusercontent.com/kl1ent/CS-GO-Scripting/main/rawetrip/loader/assets/helper/helper_aim.png", size = vector2d.new(376, 173)},
-      {name = "helper_molotov", url = "https://raw.githubusercontent.com/kl1ent/CS-GO-Scripting/main/rawetrip/loader/assets/helper/helper_molotov.png", size = vector2d.new(618, 276)}
+      {name = "helper_molotov", url = "https://raw.githubusercontent.com/kl1ent/CS-GO-Scripting/main/rawetrip/loader/assets/helper/helper_molotov.png", size = vector2d.new(618, 276)},
       {name = "helper_menu_1", url = "https://raw.githubusercontent.com/kl1ent/CS-GO-Scripting/main/rawetrip/loader/assets/helper/helper_menu_1.png", size = vector2d.new(713, 507)}
     },
     updates = {
