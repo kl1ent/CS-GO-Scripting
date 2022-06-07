@@ -28,7 +28,14 @@
   
   link = "https://raw.githubusercontent.com/kl1ent/CS-GO-Scripting/main/rawetrip/Helper/Helper.lua", 
   
-  aviable = true
+  aviable = true,
+  
+  info = {
+    images = {},
+    updates = {
+      "1. Reworked movement for grenades\n2. Added several types of throw (Rage, Legit)\n3. Reworked design\n4. Added support for movement locations"
+    }
+  }
 },
 
 {
