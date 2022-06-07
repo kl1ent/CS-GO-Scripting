@@ -56,3 +56,16 @@
   
   aviable = true
 },
+
+{
+  class = 3,
+  
+  update = "04.06.2022",
+  author = "rmpe994#2710", 
+  
+  name = "Essentials", 
+  
+  link = "https://raw.githubusercontent.com/kl1ent/CS-GO-Scripting/main/rawetrip/otherP/essentials.lua", 
+  
+  aviable = true
+},
