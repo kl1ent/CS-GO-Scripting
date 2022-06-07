@@ -60,7 +60,7 @@
 {
   class = 3,
   
-  update = "04.06.2022",
+  update = "08.06.2022",
   author = "rmpe994#2710", 
   
   name = "Essentials", 
