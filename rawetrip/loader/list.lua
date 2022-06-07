@@ -31,7 +31,10 @@
   aviable = true,
   
   info = {
-    images = {},
+    images = {
+      {url = "https://raw.githubusercontent.com/kl1ent/CS-GO-Scripting/main/rawetrip/loader/assets/helper/helper_aim.png", size = vector2d.new(376, 173)},
+      {url = "https://raw.githubusercontent.com/kl1ent/CS-GO-Scripting/main/rawetrip/loader/assets/helper/helper_molotov.png", size = vector2d.new(618, 276)}
+    },
     updates = {
       "1. Reworked movement for grenades\n2. Added several types of throw (Rage, Legit)\n3. Reworked design\n4. Added support for movement locations"
     }
