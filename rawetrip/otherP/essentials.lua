@@ -1,5 +1,5 @@
 -- [@] name: essentials.lua
--- [@] version: 1.1.
+-- [@] version: 1.2
 -- [@] by: rmpe994#2710 OPEN SOURCE*.
 -- [@] all credits:	Klient & ctzz for some sources.
 -- [@] dm me if you find bugs, soon the script will be completed.   
@@ -15,9 +15,8 @@
 ui.add_label("                                                        [antiaim]")
 ui.next_line()
 
-ui.add_combobox("[antiaim] fakelag", {"-", "minimal", "maximal", "boost dt"})
+ui.add_combobox("[antiaim] fakelag", {"-", "minimal", "maximal"})
 ui.add_combobox("[antiaim] fakelag disablers", {"-", "exploit", "r8", "air"})
-ui.add_checkbox("[-] dt +")
 ui.add_combobox("[antiaim] jitter", {"-", "preset", "extended"})
 ui.add_checkbox("[antiaim] fakeflick")
 
@@ -29,8 +28,12 @@ ui.next_line()
 
 ui.add_checkbox("[visual] hitlog")
 ui.add_checkbox("[visual] slowed indicator")
+ui.add_checkbox("[visual] watermark")
 ui.add_combobox("[visual] indicators", {"-", "style 1"})
 ui.next_line()
+ui.add_combobox("[visual] hitmarker", {"-", "style 1"})
+ui.next_line()
+
 ui.add_colorpicker("[misc] lua color")
 ui.add_label("                                                        [misc]")
 
@@ -41,8 +44,12 @@ ui.next_line()
 ui.add_combobox("[misc] better anim", {"-", "legs", "anim", "legs & anim", "breaker"})
 
 --fonts
-local font = render.setup_font("Museo Sans Cyrl 500", 15, 350, true, false, true)
-local fonte = render.setup_font("Calibri", 12, 650, true, true, true)
+local font = render.setup_font("Museo Sans Cyrl 500", 13, fontflags.bold)
+local fonte = render.setup_font("Calibri", 12, fontflags.bold, true, true, true)
+local fontwater = render.setup_font("Verdana", 12)
+local fonthit = render.setup_font("Verdana", 14, fontflags.bold)
+
+
 --local icons = render.setup_font("ELEGANTICONS", 16, 850)
 local fontmedium = render.setup_font("Verdana", 14)
 
@@ -54,6 +61,8 @@ local get_screen_size = function() return engine.get_screen_width(), engine.get_
 local height_offset = 23
 local screen = {}
 local notify, notify_list = {}, {}
+local shot_data = {}
+local switchh = 1
 --table/functions
 screen.table = {x = 0, y = 0, a = 0, up = 0}
 local lerp = function(a, b, percentage)return a + (b - a) * percentage;end
@@ -66,7 +75,9 @@ local animations = 0
 local alpha = 0
 local alpha2 = 0
 local switch = true
---keybind names
+local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
+
+--keybind names (@Klient)
 local keybinds_tbl = {height = 0, width = 0, alpha = 0, active = {}, dragging = {0, 0, 0},
     list = {
         {name = "dt", key = keybinds.double_tap},
@@ -80,16 +91,15 @@ local keybinds_tbl = {height = 0, width = 0, alpha = 0, active = {}, dragging = 
 
     }
 }
---menu gui
+--menu gui (@Ctzz)
 local function menu()
-
-    local menu = globalvars.get_menu()
-	local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
+local menu = globalvars.get_menu()
 	local options = { h = 40 }
     local self = screen.table
 	local name = engine.get_gamename()
 	local background = 160
-    local colorr = ui.get_color("[misc] lua color")
+    local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
+
 	self.x = engine.get_screen_width()
 	self.y = engine.get_screen_height()
 	if globalvars.is_open_menu() then  
@@ -113,14 +123,29 @@ local function menu()
 
 		render.text(fontmedium, menu.x + menu.z - render.get_text_width(fontmedium, engine.get_gamename() ) - 15, menu.y - options.h  - animations + 9, color.new(255,255,255,alpha), name, true, false )
 end
+--watermark (@Ctzz)
+local function watermark()
+    if ui.get_bool("[visual] watermark") then
+    if not ui.get_bool("[visual] watermark") then return end 
+    if globalvars.is_open_menu() then watermark_animation = animate.lerp(watermark_animation, 100, 0.05, false) else watermark_animation = animate.lerp(watermark_animation, 0, 0.05, false) end
 
---indicator
+    local info = { x = engine.get_screen_width(), y = engine.get_screen_height(), text = "essentials.lua / " .. string.lower(engine.get_gamename()) .. " / " .. globalvars.get_ping() .. "ms / " .. globalvars.get_time() .. " " }
+
+    local textwidth = render.get_text_width(fontwater, info.text)
+    local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
+
+    render.rect_filled(info.x - textwidth - 15 , 10 - watermark_animation , textwidth + 10, 23, color.new(ra - 20,ga - 20,ba -20,150))
+    render.text(fontwater, info.x - textwidth - 9 , 16 - watermark_animation, color.new(255,255,255,255), info.text)
+    end
+end
+
+--indicators (@Klient)
 indicator = function()
     if not entitylist.get_local_player() then return end
     if entitylist.get_local_player():get_health() == 0 then return end
+    local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
     local self = keybinds_tbl
     self.alpha = lerpklient(self.alpha, ui.get_int("[visual] indicators") == 1 and 1 or 0, globalvars.get_frametime() * 12)
-    local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
 
     if self.alpha < 0 then return end
 
@@ -186,67 +211,58 @@ local inverter = ui.get_keybind_state(keybinds.flip_desync)
 local mathh = math.random(1,16)
 
 if ui.get_int("[antiaim] fakelag") == 1 and cmd.get_send_packet() == true then
-if not engine.is_in_game() then return end
+    if not engine.is_in_game() then return end
 
-
-	if  tickcount == 1 or tickcount == 2 or tickcount == 3 or tickount == 4 or tickount == 5 or tickount == 6 or tickcount == 7 or tickcount == 8 or tickcount == 9 or tickcount == 10 or tickcount == 11 or tickcount == 12 or tickcount == 13 or tickcount == 14 or tickcount == 15 or tickcount == 16 or tickcount == 17 or tickcount == 18 or tickcount == 19 or tickcount == 20 then 
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 3)
-        ui.set_int("Antiaim.fake_lag_limit", 5)
-		ui.set_int("Antiaim.fake_lag_limit", 8)
-        ui.set_int("Antiaim.fake_lag_limit", 2)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 6)
-		ui.set_int("Antiaim.fake_lag_limit", 2)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 8)
-        ui.set_int("Antiaim.fake_lag_limit", 4)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 1) 
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 3)
-        ui.set_int("Antiaim.fake_lag_limit", 5)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-        ui.set_int("Antiaim.fake_lag_limit", 2)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 4)
-		ui.set_int("Antiaim.fake_lag_limit", 2)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-        ui.set_int("Antiaim.fake_lag_limit", 4)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 3)
-        ui.set_int("Antiaim.fake_lag_limit", 5)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-        ui.set_int("Antiaim.fake_lag_limit", 2)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 2)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-        ui.set_int("Antiaim.fake_lag_limit", 4)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 5) 
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 3)
-        ui.set_int("Antiaim.fake_lag_limit", 5)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-        ui.set_int("Antiaim.fake_lag_limit", 2)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 4)
-		ui.set_int("Antiaim.fake_lag_limit", 2)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-        ui.set_int("Antiaim.fake_lag_limit", 1)
-		ui.set_int("Antiaim.fake_lag_limit", 1)  
-	else
+    if  tickcount == 1 or tickcount == 2 or tickcount == 3 or tickount == 4 or tickount == 5 or tickount == 6 or tickcount == 7 or tickcount == 8 or tickcount == 9 or tickcount == 10 or tickcount == 11 or tickcount == 12 or tickcount == 13 or tickcount == 14 or tickcount == 15 or tickcount == 16 or tickcount == 17 or tickcount == 18 or tickcount == 19 or tickcount == 20 then 
+        ui.set_int("Antiaim.fake_lag_limit", 8)
 		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        ui.set_int("Antiaim.fake_lag_limit", 8)
+		ui.set_int("Antiaim.fake_lag_limit", 10)
+        
+	else
+		ui.set_int("Antiaim.fake_lag_limit", 1)
     end
 end
-
 if ui.get_int("[antiaim] fakelag") == 2 and cmd.get_send_packet() == true then
     if not engine.is_in_game() then return end
 
@@ -335,60 +351,8 @@ if ui.get_int("[antiaim] fakelag") == 2 and cmd.get_send_packet() == true then
     end
 end
 
-if ui.get_int("[antiaim] fakelag") == 3 and cmd.get_send_packet() == true then
-    if not engine.is_in_game() then return end
 
-    if  tickcount == 1 or tickcount == 2 or tickcount == 3 or tickount == 4 or tickount == 5 or tickount == 6 or tickcount == 7 or tickcount == 8 or tickcount == 9 or tickcount == 10 or tickcount == 11 or tickcount == 12 or tickcount == 13 or tickcount == 14 or tickcount == 15 or tickcount == 16 or tickcount == 17 or tickcount == 18 or tickcount == 19 or tickcount == 20 then 
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        
-	else
-		ui.set_int("Antiaim.fake_lag_limit", 1)
-    end
-end
-
+--fakelag disablers
 if ui.get_int("[antiaim] fakelag disablers") == 1 then
 
     if not entitylist.get_local_player() then return end
@@ -470,7 +434,7 @@ if ui.get_bool("[antiaim] peek") then
 end
 
 
-
+--fakeflick
     if ui.get_bool("[antiaim] fakeflick") then
         if not engine.is_in_game() then return end
 		if not ui.get_bool("[antiaim] fakeflick") then return end
@@ -486,11 +450,10 @@ end
             ui.set_int("Antiaim.yaw_offset", 0)
         end
     end
-    if ui.get_bool("[-] dt +") then
-        ui.set_int("Ragebot.dtspeed", 0)
-    end
+
 end
 
+--anims
 anim = function()
     if ui.get_int("[misc] better anim") == 1 then
 		if entitylist.get_local_player() == nil then return end 
@@ -534,6 +497,8 @@ anim = function()
 	end
 end
 
+
+--fakeping
 fakeping = function()
     value = ui.get_int("[misc] pingspike")
     if ui.get_int("[misc] pingspike") then
@@ -541,9 +506,11 @@ fakeping = function()
 end
 end
 
+
+--slowed down indicator
 slowed = function()
     if ui.get_bool("[visual] slowed indicator") then 
-        ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
+        local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
         local sc = { 
             xx = engine.get_screen_width() / 2,
             yy = engine.get_screen_height() / 2,
@@ -561,6 +528,76 @@ slowed = function()
     end
 end
 
+
+--hitmarker
+
+
+function hitmarker()
+ if ui.get_int("[visual] hitmarker") == 1 then
+    ui.set_bool("Esp.damage_marker", false) 
+    if not ui.get_int("[visual] hitmarker") == 1 then return end
+    local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
+
+    for i = 1, #shot_data do
+    
+        local shot = shot_data[i]
+        
+        if shot.draw then
+
+            if shot.alpha <= 0 then
+                shot.alpha = 0
+                shot.draw = false
+            else
+                if shot.z >= shot.target then shot.alpha = shot.alpha - 1 end
+                
+                local s = render.world_to_screen(vector.new(shot.x,shot.y,shot.z))
+                
+                if shot.dmg then
+    
+                   		render.text(fonthit,s.x, s.y, color.new(ra,ga,ba,shot.alpha), "-".. shot.dmg,true,false)
+
+
+                end
+                shot.z = shot.z + 0.5
+                
+            end
+        end
+    end
+end
+end
+
+
+--hitmarker function
+function player_hurt(e)
+    if ui.get_int("[visual] hitmarker") == 1 then
+    if not ui.get_int("[visual] hitmarker") == 1 then return end
+
+    local attacker = e:get_int("attacker")
+    local attacker_idx = engine.get_player_for_user_id(attacker)
+    
+    local victim = e:get_int("userid")
+    local victim_idx = engine.get_player_for_user_id(victim)
+    
+    if attacker_idx ~= engine.get_local_player_index() then
+        return
+    end
+    
+    local pos = entitylist.get_player_by_index(victim_idx):get_absorigin()
+    local duck = entitylist.get_player_by_index(victim_idx):get_prop_float("CBasePlayer", "m_flDuckAmount")
+    
+    pos.z = pos.z + (46 + (1 - duck) * 18)
+    
+    switchh = switchh*-1
+    
+    shot_data[#shot_data+1] = { x = pos.x, y = pos.y+switchh*35, z = pos.z, target = pos.z + 25, dmg = e:get_int("dmg_health"), alpha = 255, draw = true,}
+end
+end
+
+--hitmarker reset
+function round_start()
+    shot_data = {}
+end
+--notify function (@Klient)
 notify.on_paint = function()
     local height_offset = 23
 
@@ -579,22 +616,22 @@ notify.on_paint = function()
     end
 end
 
-
+--paint notify (@Klient)
 local function shot_info(e)
     if ui.get_bool("[visual] hitlog") then
     if e.result == "Hit" then
-		if e.server_hitbox == "Head" then clor = {255 , 0 ,0} else clor = {255 , 255 , 255} end
-        notify.run(e.target_name.."'s " ..e.server_hitbox.. " -"..e.server_damage , 5, clor )
+		if e.server_hitbox == "Head" then clor = {255 , 112 ,106} else clor = {255 , 255 , 255} end
+        notify.run(string.lower(e.target_name).."'s " .. string.lower(e.server_hitbox) .. " -"..e.server_damage, 5, clor )
     elseif e.result == "Spread" then
-        notify.run(" Missed at "..e.target_name.. " due to spread " , 5, {244,181,76,255})
+        notify.run(" missed at "..string.lower(e.target_name) .. " due to spread " , 5, {244,181,76,255})
     elseif e.result == "Resolver" then
-        notify.run(" Missed at "..e.target_name.. " due to resolver " , 5, {255, 0, 0})
+        notify.run(" missed at "..string.lower(e.target_name) .. " due to resolver " , 5, {255, 0, 0})
     elseif e.result == "Occlusion" then
-        notify.run(" Missed at "..e.target_name.. " due to ? " , 5, {255, 255, 255})
+        notify.run(" missed at "..string.lower(e.target_name) .. " due to ? " , 5, {255, 255, 255})
     end
 end
 end
-
+--print function (@Klient)
 local print = function(...)
     console.execute_client_cmd("con_filter_enable 0")
     for i, data in pairs({...}) do
@@ -602,14 +639,20 @@ local print = function(...)
     end
 end
 cheat.popup("essentials loaded", "check the console")
-print("useful information about lua and functions", "use dt boost and dt + with fast exploit recharge")
+print("useful information about lua and functions", "version : 1.2")
  
+--register_event
+events.register_event("player_hurt", player_hurt)
+events.register_event("round_prestart", round_start)
+--callbacks
 cheat.RegisterCallback("on_shot", shot_info)
 cheat.RegisterCallback("on_paint", function()
 	notify.on_paint()
 	indicator()                          
 	menu()
+    watermark()
     slowed()
+    hitmarker()
 end)
 
 cheat.RegisterCallback("on_createmove", function()
