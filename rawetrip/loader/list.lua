@@ -21,7 +21,7 @@
 },
 
 {
-  update = "03.06.2022",
+  update = "18.06.2022",
   author = "Klient#1690", 
   
   name = "Helper", 
