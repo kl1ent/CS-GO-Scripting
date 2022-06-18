@@ -10,7 +10,7 @@
 },
 
 {
-  update = "30.04.2022",
+  update = "19.06.2022",
   author = "Klient#1690", 
   
   name = "Necron", 
