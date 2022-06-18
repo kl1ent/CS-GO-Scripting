@@ -1,4 +1,3 @@
-
 --[[ @region: script information
     * @ Grenade Helper.
     * @ Ported by Klient#1690.
@@ -6,7 +5,7 @@
     * @ note: ported from gamesense lua.
 -- @endregion ]]
 
-local map_aliases = {["workshop/141243798/aim_ag_texture2"] = "aim_ag_texture2", ["workshop/1855851320/de_cache_new"] = "de_cache", ["workshop/533515529/bot_aimtrain_textured_v1"] = "bot_aimtrain_textured_v1"}
+local map_aliases = {["workshop/141243798/aim_ag_texture2"] = "aim_ag_texture2", ["workshop/1855851320/de_cache_new"] = "de_cache", ["workshop/533515529/bot_aimtrain_textured_v1"] = "bot_aimtrain_textured_v1", ["de_shortnuke"] = "de_nuke"}
 local map_patterns = {["_scrimmagemap$"] = ""}
 local data_all
 --@region: auxiliary functions
