@@ -1,5 +1,5 @@
 -- [@] name: essentials.lua
--- [@] version: 1.2
+-- [@] version: 1.3
 -- [@] by: rmpe994#2710 OPEN SOURCE*.
 -- [@] all credits:	Klient & ctzz for some sources.
 -- [@] dm me if you find bugs, soon the script will be completed.   
@@ -16,7 +16,7 @@ ui.add_label("                                                        [antiaim]"
 ui.next_line()
 
 ui.add_combobox("[antiaim] fakelag", {"-", "minimal", "maximal"})
-ui.add_combobox("[antiaim] fakelag disablers", {"-", "exploit", "r8", "air"})
+ui.add_combobox("[antiaim] fakelag disablers", {"-", "exploit", "r8", "air", "shot"})
 ui.add_combobox("[antiaim] jitter", {"-", "preset", "extended"})
 ui.add_checkbox("[antiaim] fakeflick")
 
@@ -29,10 +29,11 @@ ui.next_line()
 ui.add_checkbox("[visual] hitlog")
 ui.add_checkbox("[visual] slowed indicator")
 ui.add_checkbox("[visual] watermark")
-ui.add_combobox("[visual] indicators", {"-", "style 1"})
+ui.add_combobox("[visual] indicators", {"-", "style 1", "style 2"})
 ui.next_line()
 ui.add_combobox("[visual] hitmarker", {"-", "style 1"})
 ui.next_line()
+--ui.add_combobox("hitsound", {"-","style 1"})
 
 ui.add_colorpicker("[misc] lua color")
 ui.add_label("                                                        [misc]")
@@ -41,13 +42,17 @@ ui.add_sliderint("[misc] pingspike", 0, 80)
 ui.add_checkbox("[misc] viewmodel in scope")
 ui.add_checkbox("[misc] neverlose viewmodel")
 ui.next_line()
-ui.add_combobox("[misc] better anim", {"-", "legs", "anim", "legs & anim", "breaker"})
+ui.add_combobox("[misc] better anim", {"-", "static legs", "static legs & anim", "breaker"})
+ui.next_line()
+ui.add_sliderint("[-] pitch 0 on land time", 4, 8)
 
 --fonts
 local font = render.setup_font("Museo Sans Cyrl 500", 13, fontflags.bold)
 local fonte = render.setup_font("Calibri", 12, fontflags.bold, true, true, true)
 local fontwater = render.setup_font("Verdana", 12)
 local fonthit = render.setup_font("Verdana", 14, fontflags.bold)
+local smallestitle = render.setup_font("Small Fonts", 10, fontflags.bold)
+local smallestin = render.setup_font("Small Fonts", 9)
 
 
 --local icons = render.setup_font("ELEGANTICONS", 16, 850)
@@ -67,6 +72,7 @@ local switchh = 1
 screen.table = {x = 0, y = 0, a = 0, up = 0}
 local lerp = function(a, b, percentage)return a + (b - a) * percentage;end
 notify.run = function(text, ms, color) return table.insert(notify_list, 1, {text = text, ms = ms, alpha = 0, asx = -10, frametime = globalvars.get_frametime(), color = color}) end
+local get_player_state = function(flags, player)local m_flags = flags;if m_flags == 256 then return "AIR";elseif m_flags == 263 then return "CROUCHING";elseif m_flags == 262 then return "CROUCHING AIR";end;if player:get_velocity():length_2d() > 70 then return "MOVEING";end;if player:get_velocity():length_2d() < 70 and player:get_velocity():length_2d() > 2 then return "SLOW";end; return "STANDING";end
 
 local lerpklient = function(a, b, percentage) return a + (b - a) * percentage;end
 --locals menu
@@ -76,6 +82,11 @@ local alpha = 0
 local alpha2 = 0
 local switch = true
 local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
+local visible = 0
+local second = 0
+local image = steam.get_user_avatar()
+local player_states = {"Global", "Standing", "Moving", "Slow motion", "Air"}
+
 
 --keybind names (@Klient)
 local keybinds_tbl = {height = 0, width = 0, alpha = 0, active = {}, dragging = {0, 0, 0},
@@ -91,6 +102,20 @@ local keybinds_tbl = {height = 0, width = 0, alpha = 0, active = {}, dragging = 
 
     }
 }
+local keybinds_table = {height = 0, width = 0, alpha = 0, active = {}, dragging = {0, 0, 0},
+    list = {
+        {name = "DT", key = keybinds.double_tap},
+        {name = "OSAA", key = keybinds.hide_shots},
+        {name = "PEEK", key = keybinds.automatic_peek},
+        {name = "SAFE", key = keybinds.safe_points},
+        {name = "DMG", key = keybinds.damage_override},
+        {name = "BODY", key = keybinds.body_aim},
+        {name = "DUCK", key = keybinds.fakeduck},
+
+
+    }
+}
+
 --menu gui (@Ctzz)
 local function menu()
 local menu = globalvars.get_menu()
@@ -106,22 +131,27 @@ local menu = globalvars.get_menu()
 	animations = lerp(animations, 5, 0.05, false) if not globalvars.is_open_menu() then animations = lerp(animations, 0, 0.05, false) end
 	alpha = lerp(alpha, 255, 0.05, false) if not globalvars.is_open_menu() then alpha = lerp(alpha, 0, 0.05, false) end
 	alpha2 = lerp(alpha2, background , 0.05, false) if not globalvars.is_open_menu() then alpha2 = lerp(alpha2, 0, 0.05, false) end
-	
+	visible = lerp(visible, 25, 0.05, false) if not globalvars.is_open_menu() then visible = lerp(visible, 0, 0.05, false) end
 
 	end
 		if not globalvars.is_open_menu() then animations = lerp(animations, -100, 0.05, false) else animations = lerp(animations, 0, 0.05, false) end
         if not globalvars.is_open_menu() then alpha = lerp(alpha, 0, 0.05, false) else alpha = lerp(alpha, 255, 0.05, false) end
         if not globalvars.is_open_menu() then alpha2 = lerp(alpha2, 0, 0.05, false) else alpha2 = lerp(alpha2, 170, 0.05, false) end
- 
+        if not globalvars.is_open_menu() then visible = lerp(visible, 0, 0.05, false) else visible = lerp(visible, 24, 0.05, false) end
+
         animation = animate.lerp(animation, globalvars.get_menu())
 		render.rect_filled_rounded(menu.x, menu.y - options.h - animations - 5, menu.z, options.h, 60, 3, color.new(0, 0, 0, alpha2))
 		render.rect_filled(menu.x, menu.y - options.h  - animations - 5, menu.z, 2, color.new(ra, ga, ba, alpha))
-		render.text(fontmedium, menu.x + 15, menu.y - options.h - animations + 9, color.new(255,255,255, alpha), "Essentials.lua [beta]", true, false)
+		render.text(fontmedium, menu.x + 15, menu.y - options.h - animations + 9, color.new(255,255,255, alpha), "Essentials.lua [stable]", true, false)
 
 
 
 
 		render.text(fontmedium, menu.x + menu.z - render.get_text_width(fontmedium, engine.get_gamename() ) - 15, menu.y - options.h  - animations + 9, color.new(255,255,255,alpha), name, true, false )
+        render.image(image, menu.x + menu.z - render.get_text_width(fontmedium, engine.get_gamename() ) - 45, menu.y - options.h  - animations + 3, visible, visible, 200) 
+       
+
+
 end
 --watermark (@Ctzz)
 local function watermark()
@@ -136,6 +166,7 @@ local function watermark()
 
     render.rect_filled(info.x - textwidth - 15 , 10 - watermark_animation , textwidth + 10, 23, color.new(ra - 20,ga - 20,ba -20,150))
     render.text(fontwater, info.x - textwidth - 9 , 16 - watermark_animation, color.new(255,255,255,255), info.text)
+    --render.image(image, info.x - textwidth - 12, 10 - watermark_animation, 21, 21, 200)
     end
 end
 
@@ -151,6 +182,7 @@ indicator = function()
 
     local maximum_offset = 66
     local indexes = 0
+
 
     for c_id, c_data in pairs(self.list) do
         local item_active = ui.get_keybind_state(c_data.key)
@@ -174,7 +206,7 @@ indicator = function()
                 self.active[c_id].alpha = 1
             end
         elseif self.active[c_id] ~= nil then
-            self.active[c_id].active = false
+            self.active[c_id].active = false 
             self.active[c_id].alpha = lerpklient(self.active[c_id].alpha, 0, globalvars.get_frametime() * 12)
 
             if self.active[c_id].alpha < 0.1 then
@@ -199,156 +231,94 @@ indicator = function()
         render.text(fontmedium, x - render.get_text_width(fontmedium, c_ref.name)/2 , y + height_offset, color.new(ra, ga, ba, self.alpha*c_ref.alpha*255), c_ref.name, true)
         height_offset = height_offset + 15 * c_ref.alpha
     end
+
+
+
+
+    
 end
 
---antiaim/misc
+local function newindicators()
+
+    if ui.get_int("[visual] indicators") == 2 then
+        if entitylist.get_local_player() == nil then return end 
+		if not engine.is_in_game() then return end
+		if entitylist.get_local_player():get_health() == 0 then return end
+
+        local lua_namee = "ESSENTIALS.LUA"
+        local state = get_player_state(local_player:get_prop_int("CBasePlayer", "m_fFlags"), local_player)
+        local offsett = 6
+        local ra, ga, ba = ui.get_color("[misc] lua color"):r(), ui.get_color("[misc] lua color"):g(), ui.get_color("[misc] lua color"):b()
+
+
+        render.text(smallestitle, screen_w/2 - render.get_text_width(smallestitle, lua_namee)/2, screen_h/2 + 15, color.new(ra,ga,ba,255), lua_namee, true, true)
+        render.text(smallestin, screen_w/2 - render.get_text_width(smallestin, state)/2 , screen_h/2 + 24, color.new(255,255,255,255), state, false, true)
+
+        if ui.get_keybind_state(keybinds.double_tap) then 
+
+        render.text(smallestin, screen_w/2 - render.get_text_width(smallestin, "DT")/2 , screen_h/2 + 29 + offsett, color.new(255,255,255,255), "DT", false, true) offsett = offsett + 10
+        end
+
+        if (ui.get_keybind_state(keybinds.hide_shots)) then 
+
+        render.text(smallestin, screen_w/2 - render.get_text_width(smallestin, "OSAA")/2 , screen_h/2 + 29 + offsett, color.new(255,255,255,255), "OSAA", false, true) offsett = offsett + 10 
+        end
+
+        if (ui.get_keybind_state(keybinds.damage_override)) then 
+
+            render.text(smallestin, screen_w/2 - render.get_text_width(smallestin, "DMG")/2 , screen_h/2 + 29 + offsett, color.new(255,255,255,255), "DMG", false, true) offsett = offsett + 10 
+        end
+
+        if (ui.get_keybind_state(keybinds.body_aim)) then 
+
+            render.text(smallestin, screen_w/2 - render.get_text_width(smallestin, "BODY")/2 , screen_h/2 + 29 + offsett, color.new(255,255,255,255), "BODY", false, true) offsett = offsett + 10 
+        end
+
+        if (ui.get_keybind_state(keybinds.safe_points)) then 
+
+            render.text(smallestin, screen_w/2 - render.get_text_width(smallestin, "SAFE")/2 , screen_h/2 + 29 + offsett, color.new(255,255,255,255), "SAFE", false, true) offsett = offsett + 10 
+        end
+
+    end
+end
+
+
+
+--antiaim/misc 
 local function createmove()
 if not entitylist.get_local_player() then return end
 if entitylist.get_local_player():get_health() == 0 then return end
 local tickcount = globalvars.get_tickcount() % 60
 local fspeed = ui.get_int("[-] fakeflick speed")
 local inverter = ui.get_keybind_state(keybinds.flip_desync)
-local mathh = math.random(1,16)
 
-if ui.get_int("[antiaim] fakelag") == 1 and cmd.get_send_packet() == true then
-    if not engine.is_in_game() then return end
 
-    if  tickcount == 1 or tickcount == 2 or tickcount == 3 or tickount == 4 or tickount == 5 or tickount == 6 or tickcount == 7 or tickcount == 8 or tickcount == 9 or tickcount == 10 or tickcount == 11 or tickcount == 12 or tickcount == 13 or tickcount == 14 or tickcount == 15 or tickcount == 16 or tickcount == 17 or tickcount == 18 or tickcount == 19 or tickcount == 20 then 
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        ui.set_int("Antiaim.fake_lag_limit", 8)
-		ui.set_int("Antiaim.fake_lag_limit", 10)
-        
-	else
-		ui.set_int("Antiaim.fake_lag_limit", 1)
+if ui.get_int("[antiaim] fakelag") == 1 then
+    local first = 0
+    if first < globalvars.get_tickcount() then
+     second = second + 1
     end
+    if second == 110 then second = 0 end
+ if second == 1 then ui.set_int("Antiaim.fake_lag_limit", 8) end
+
+ if second == 80 then ui.set_int("Antiaim.fake_lag_limit", 1) end
+
+    
+    
+
 end
-if ui.get_int("[antiaim] fakelag") == 2 and cmd.get_send_packet() == true then
+if ui.get_int("[antiaim] fakelag") == 2 then
     if not engine.is_in_game() then return end
 
-    if  tickcount == 1 or tickcount == 2 or tickcount == 3 or tickount == 4 or tickount == 5 or tickount == 6 or tickcount == 7 or tickcount == 8 or tickcount == 9 or tickcount == 10 or tickcount == 11 or tickcount == 12 or tickcount == 13 or tickcount == 14 or tickcount == 15 or tickcount == 16 or tickcount == 17 or tickcount == 18 or tickcount == 19 or tickcount == 20 or tickcount == 21
-    or tickcount == 22 or tickcount == 23 or tickcount == 24 or tickcount == 24  or tickcount == 25  or tickcount == 26 or tickcount == 27 or tickcount == 28 or tickcount == 29 or tickcount == 30 then 
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14) 
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)  
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14) 
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-        ui.set_int("Antiaim.fake_lag_limit", 14)
-		ui.set_int("Antiaim.fake_lag_limit", 14) 
-	else
-		ui.set_int("Antiaim.fake_lag_limit", 1)
+    local first = 0
+    if first < globalvars.get_tickcount() then
+     second = second + 1
     end
+    if second == 110 then second = 0 end
+ if second == 1 then ui.set_int("Antiaim.fake_lag_limit", 14) end
+
+ if second == 80 then ui.set_int("Antiaim.fake_lag_limit", 1) end
+
 end
 
 
@@ -385,6 +355,8 @@ if ui.get_int("[antiaim] fakelag disablers") == 3 then
     if flag == 256 then ui.set_int("Antiaim.fake_lag_limit", 1) end
 
 end
+
+
 
 if ui.get_int("[antiaim] jitter") == 1 and cmd.get_send_packet() == true then
     if not engine.is_in_game() then return end
@@ -452,43 +424,54 @@ end
     end
 
 end
+local function weapon_fire(e)
+    if ui.get_int("[antiaim] fakelag disablers") == 3 then
+    local player_fire = e:get_int("userint")
+    local local_player = entitylist.get_local_player()
+    --local nextAttack = local_player:get_prop_float("CCSPlayer", "m_flNextAttack")
 
+
+    if player_fire then
+        ui.set_int("Antiaim.fake_lag_limit", 1) 
+    end
+
+    --if ui.get_int("Antiaim.fake_lag_limit", 1) then ui.set_int("Antiaim.fake_lag_limit", 15)  end
+
+    --if nextAttack then ui.set_keybind_state(keybinds.hide_shots, true) end
+end
+end
 --anims
 anim = function()
     if ui.get_int("[misc] better anim") == 1 then
 		if entitylist.get_local_player() == nil then return end 
 		if not engine.is_in_game() then return end
 		if entitylist.get_local_player():get_health() == 0 then return end
-        ui.set_int("Misc.leg_movement", 1)
+        entitylist.get_local_player():m_flposeparameter()[7] = 1 -- static legs
 
-	end
-    if ui.get_int("[misc] better anim") == 2 then
-		if entitylist.get_local_player() == nil then return end 
-		if not engine.is_in_game() then return end
-		if entitylist.get_local_player():get_health() == 0 then return end
-        ui.set_bool("Misc.balance_adjustment", true)
-        flag = entitylist.get_local_player():get_prop_int("CBasePlayer","m_fFlags") 
-        if flag == 256 or flag == 262 then int = 0 end if flag == 257 or flag == 261 or flag == 263 then int = int + 4 end if int > 45 and int < 250 then 
-        ui.set_int("0Antiaim.pitch", 0) 
-        else 
-        ui.set_int("0Antiaim.pitch", 1) end  
 
 	end
     
-	if ui.get_int("[misc] better anim") == 3 then
+	if ui.get_int("[misc] better anim") == 2 then
 		if entitylist.get_local_player() == nil then return end 
 		if not engine.is_in_game() then return end
 		if entitylist.get_local_player():get_health() == 0 then return end
         ui.set_bool("Misc.balance_adjustment", true)
-        ui.set_int("Misc.leg_movement", 1)
+
+        entitylist.get_local_player():m_flposeparameter()[7] = 1 -- static legs
+        local timee = ui.get_int("[-] pitch 0 on land time")
         flag = entitylist.get_local_player():get_prop_int("CBasePlayer","m_fFlags") 
-        if flag == 256 or flag == 262 then int = 0 end if flag == 257 or flag == 261 or flag == 263 then int = int + 4 end if int > 45 and int < 250 then 
+
+        if flag == 256 or flag == 262 then 
+            int = 0 end 
+        if flag == 257 or flag == 261 or flag == 263 then 
+            int = int + timee end 
+        if int > 45 and int < 250 then 
         ui.set_int("0Antiaim.pitch", 0) 
         else 
         ui.set_int("0Antiaim.pitch", 1) end  
-        
+
 	end
-    if ui.get_int("[misc] better anim") == 4 then
+    if ui.get_int("[misc] better anim") == 3 then
 		if entitylist.get_local_player() == nil then return end 
 		if not engine.is_in_game() then return end
 		if entitylist.get_local_player():get_health() == 0 then return end
@@ -568,7 +551,7 @@ end
 
 
 --hitmarker function
-function player_hurt(e)
+local function player_hurt(e)
     if ui.get_int("[visual] hitmarker") == 1 then
     if not ui.get_int("[visual] hitmarker") == 1 then return end
 
@@ -581,6 +564,7 @@ function player_hurt(e)
     if attacker_idx ~= engine.get_local_player_index() then
         return
     end
+
     
     local pos = entitylist.get_player_by_index(victim_idx):get_absorigin()
     local duck = entitylist.get_player_by_index(victim_idx):get_prop_float("CBasePlayer", "m_flDuckAmount")
@@ -590,8 +574,13 @@ function player_hurt(e)
     switchh = switchh*-1
     
     shot_data[#shot_data+1] = { x = pos.x, y = pos.y+switchh*35, z = pos.z, target = pos.z + 25, dmg = e:get_int("dmg_health"), alpha = 255, draw = true,}
+    console.execute_client_cmd("playvol name.wav 1") --if you want to replace the sound change the sound put "name.wav" to the name
+
+
+    
 end
 end
+
 
 --hitmarker reset
 function round_start()
@@ -639,16 +628,20 @@ local print = function(...)
     end
 end
 cheat.popup("essentials loaded", "check the console")
-print("useful information about lua and functions", "version : 1.2")
+print("useful information about lua and functions", "version : 1.3","discord: https://discord.gg/wBMSpVDXqu")
  
 --register_event
 events.register_event("player_hurt", player_hurt)
+events.register_event("weapon_fire", weapon_fire)
+
 events.register_event("round_prestart", round_start)
 --callbacks
+cheat.RegisterCallback("on_framestage", anim)
 cheat.RegisterCallback("on_shot", shot_info)
 cheat.RegisterCallback("on_paint", function()
 	notify.on_paint()
-	indicator()                          
+	indicator()
+    newindicators()
 	menu()
     watermark()
     slowed()
@@ -679,8 +672,8 @@ cheat.RegisterCallback("on_createmove", function()
     end
     if ui.get_bool("[antiaim] at targets air") then
         if not ui.get_bool("[antiaim] at targets air") then return end
-
-        if engine.get_active_key(0x20) then
+        local fflag = entitylist.get_local_player():get_prop_int("CBasePlayer", "m_fFlags")
+        if fflag == 256 or fflag == 262 then
             ui.set_int("0Antiaim.base_angle", 1 )
             else
             ui.set_int("0Antiaim.base_angle", 0 )
@@ -688,12 +681,6 @@ cheat.RegisterCallback("on_createmove", function()
     end
 
     createmove()
-    anim()
     fakeping()
 	
 end)
-
-
-
-
-
